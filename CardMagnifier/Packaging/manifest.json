@@ -1,0 +1,12 @@
+{
+    "name": "DamageTracker",
+    "version_number": "0.0.0",
+    "website_url": "https://github.com/Pudassassin/",
+    "description": "The all too common damage (and heal) numbers for ROUNDS, Evolved!",
+    "author": "Pudassassin",
+    "dependencies": [
+        "BepInEx-BepInExPack_ROUNDS-5.4.1100",
+        "Pykess-ModdingUtils-0.2.7",
+        "willis81808-UnboundLib-2.10.2"
+    ]
+}
