@@ -1,16 +1,17 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 using UnboundLib;
+using DamageTracker.MonoBehaviors;
 
 namespace DamageTracker.Patches
 {
     [HarmonyPatch(typeof(HealthHandler))]
     class HealthHandler_Patch
     {
-        [HarmonyPrefix]
+        [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
         [HarmonyPatch("Heal")]
-        static void ApplyHealMultiplier(Player ___player, ref float healAmount)
+        static void RecordHeal(Player ___player, ref float healAmount)
         {
             // positive healing
             
@@ -18,13 +19,14 @@ namespace DamageTracker.Patches
             
         }
 
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
+        [HarmonyPostfix]
+        [HarmonyPriority(Priority.Last)]
         [HarmonyPatch("DoDamage")]
-        static void ApplyDamageMultiplier(HealthHandler __instance, ref Vector2 damage, Player ___player)
+        static void RecordDamage(HealthHandler __instance, ref Vector2 damage, Player ___player)
         {
             // bullets, and all other sort of damaging capabilities
-
+            PlayerDamageTracker tracker = ___player.gameObject.GetComponent<PlayerDamageTracker>();
+            tracker.TrackDamage(damage.magnitude);
         }
 
         // [HarmonyPostfix]

@@ -13,8 +13,7 @@ using UnboundLib.GameModes;
 using UnboundLib.Cards;
 using UnboundLib.Utils.UI;
 using HarmonyLib;
-
-
+using DamageTracker.MonoBehaviors;
 
 namespace DamageTracker
 {
@@ -32,7 +31,7 @@ namespace DamageTracker
     {
         private const string ModId = "com.pudassassin.rounds.DamageTracker";
         private const string ModName = "Damage Tracker";
-        private const string Version = "0.0.0"; //build #1 / Release 0-0-0
+        private const string Version = "0.0.1"; //build #2 / Release 0-1-0
 
         private const string CompatibilityModName = "DamageTracker";
 
@@ -276,9 +275,7 @@ namespace DamageTracker
             //     showInPauseMenu: true
             // );
 
-            GameModeManager.AddHook(GameModeHooks.HookPlayerPickStart, OnPlayerPickStart);
-            // GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, OnPlayerPickEnd);
-            GameModeManager.AddHook(GameModeHooks.HookPointStart, OnPointStart);
+            GameModeManager.AddHook(GameModeHooks.HookGameStart, OnGameStart);
 
         }
 
@@ -287,19 +284,35 @@ namespace DamageTracker
             
         }
 
-        public IEnumerator OnPlayerPickStart(IGameModeHandler gm)
+        IEnumerator OnGameStart(IGameModeHandler gm)
         {
-            // UnityEngine.Debug.Log("[DamageTracker] Player Picking Started");
-        
+            foreach (Player player in PlayerManager.instance.players)
+            {
+                PlayerDamageTracker tracker = player.gameObject.GetComponent<PlayerDamageTracker>();
+                if (tracker != null)
+                {
+                    Destroy(tracker);
+                }
+
+                player.gameObject.AddComponent<PlayerDamageTracker>();
+            }
+
             yield break;
         }
 
-        public IEnumerator OnPointStart(IGameModeHandler gm)
-        {
-            // UnityEngine.Debug.Log("[CardMagnifier] Point Start");
-        
-            yield break;
-        }
+        // public IEnumerator OnPlayerPickStart(IGameModeHandler gm)
+        // {
+        //     // UnityEngine.Debug.Log("[DamageTracker] Player Picking Started");
+        // 
+        //     yield break;
+        // }
+
+        // public IEnumerator OnPointStart(IGameModeHandler gm)
+        // {
+        //     // UnityEngine.Debug.Log("[CardMagnifier] Point Start");
+        // 
+        //     yield break;
+        // }
 
         // public IEnumerator OnPlayerPickEnd(IGameModeHandler gm)
         // {
@@ -308,6 +321,9 @@ namespace DamageTracker
         // 
         //     yield break;
         // }
+
+        // !! // assets and prefabs
+        public static readonly AssetBundle MainAsset = Jotunn.Utils.AssetUtils.LoadAssetBundleFromResources("dmgtracker_asset", typeof(DamageTracker).Assembly);
 
     }
 
