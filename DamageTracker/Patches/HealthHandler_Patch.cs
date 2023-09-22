@@ -13,10 +13,24 @@ namespace DamageTracker.Patches
         [HarmonyPatch("Heal")]
         static void RecordHeal(Player ___player, ref float healAmount)
         {
+            if (___player.data.health >= ___player.data.maxHealth && healAmount > 0)
+            {
+                // skip / untrack condition
+                return;
+            }
+
+            PlayerDamageTracker tracker = ___player.gameObject.GetComponent<PlayerDamageTracker>();
             // positive healing
+            if (healAmount > 0.0f)
+            {
+                tracker.TrackHeal(healAmount);
+            }
             
             // negative 'healing' -- magick damage, life drains, etc.
-            
+            else if (healAmount < 0.0f)
+            {
+                tracker.TrackNegHeal(-healAmount);
+            }
         }
 
         [HarmonyPostfix]

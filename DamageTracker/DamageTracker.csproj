@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets\dmgtracker_asset" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Assets\dmgtracker_asset" />
   </ItemGroup>
   

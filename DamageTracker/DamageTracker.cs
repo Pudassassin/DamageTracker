@@ -31,7 +31,7 @@ namespace DamageTracker
     {
         private const string ModId = "com.pudassassin.rounds.DamageTracker";
         private const string ModName = "Damage Tracker";
-        private const string Version = "0.0.1"; //build #2 / Release 0-1-0
+        private const string Version = "0.0.9"; //build #9 / Release 0-1-0
 
         private const string CompatibilityModName = "DamageTracker";
 
