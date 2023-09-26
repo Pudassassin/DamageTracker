@@ -418,7 +418,7 @@ namespace DamageTracker
                     break;
 
                 case PlayerDamageTracker.NumberFormatting.sciencific:
-                    numberFormatStyleName = "Science";
+                    numberFormatStyleName = "Science!";
                     break;
 
                 default:
@@ -551,7 +551,7 @@ namespace DamageTracker
         // Main/Presets
         private static void PresetsMenu(GameObject menu)
         {
-            MenuHandler.CreateButton("DamageIndicator+", menu, ClassicPlusPreset, 60, color: easyChangeColor);
+            MenuHandler.CreateButton("Damage Indicator+", menu, ClassicPlusPreset, 60, color: easyChangeColor);
             MenuHandler.CreateText("<i>a familiar classic</i>", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 20);
 
@@ -661,7 +661,7 @@ namespace DamageTracker
                 PlayerDamageTracker.UpdateConfigs();
                 UpdateAndRefreshPreviews();
             }
-            MenuHandler.CreateSlider("Value-to-Size Factor", menu, 30, 0.0f, 2.0f, ScaleNumberSizeByValue, ScaleNumberSizeByValueChanged, out Slider slider8, false, color: Color.white);
+            MenuHandler.CreateSlider("Value-to-Size Scaling", menu, 30, 0.0f, 1.0f, ScaleNumberSizeByValue, ScaleNumberSizeByValueChanged, out Slider slider8, false, color: Color.white);
             SlidersToSync["ScaleNumberSizeByValue"].Add(slider8);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 20);
 
