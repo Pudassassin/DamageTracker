@@ -8,7 +8,7 @@ namespace DamageTracker.Patches
     [HarmonyPatch(typeof(HealthHandler))]
     class HealthHandler_Patch
     {
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPriority(Priority.Last)]
         [HarmonyPatch("Heal")]
         static void RecordHeal(Player ___player, ref float healAmount)
@@ -33,7 +33,7 @@ namespace DamageTracker.Patches
             }
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPriority(Priority.Last)]
         [HarmonyPatch("DoDamage")]
         static void RecordDamage(HealthHandler __instance, ref Vector2 damage, Player ___player)

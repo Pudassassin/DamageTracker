@@ -7,6 +7,8 @@ using UnityEngine;
 using UnboundLib;
 using System.Globalization;
 using UnityEngine.UI;
+using static UnityEngine.EventSystems.EventTrigger;
+using HarmonyLib;
 
 namespace DamageTracker.MonoBehaviors
 {
@@ -52,12 +54,13 @@ namespace DamageTracker.MonoBehaviors
 
         // !! // Setting variables
         public static NumberFormatting formatSetting = NumberFormatting.spacing;
+        public static bool usePlayerColor = true;
 
         public static float maxValueToShowDecimal = 25.0f;
         public static bool hideDecimalOveride = false;
         public static float scaleDecimalPart = 0.75f;
 
-        public static bool trackUnspecifiedHealDelta = true;
+        // public static bool trackUnspecifiedHealDelta = true;
 
         public static float baseFontSize = 24f;
         public static float baseNumberScale = 1.0f;
@@ -69,7 +72,7 @@ namespace DamageTracker.MonoBehaviors
         public static float damageNumberLifetime = 2.25f;
         public static float damageNumberFullOpaqueTime = 1.45f;
 
-        public static float dpsMeasureWindow = 1.0f;
+        public static float dpsMeasureWindow = 0.995f;
         public static float dpsMeasureIdleTime = 0.35f;
 
         public static Vector3 numberSpawnOffset     = new Vector3(0.0f, 35.0f, 0.0f);
@@ -81,10 +84,13 @@ namespace DamageTracker.MonoBehaviors
         public static Color colorNegHeal            = new Color(1f, .35f, 1f);
         public static Color colorUnclassified       = new Color(.75f, .75f, .75f);
 
+        public static Color brightenPlayerColor     = new Color(.20f, .20f, .20f, 1.0f);
+        public static Color darkenNumberOutline     = new Color(.50f, .50f, .50f, 0.45f);
+
         // !! // Font attribute
         public static float fontWidthToHeightRatio = 0.5f;
         public static float textPadding = 15.0f;
-        public static float textUnstackingSpeedMul = 2.5f;
+        public static float textUnstackingSpeedMul = 6.5f;
 
         // !! // Instance variables / data
         public static GameObject canvasObject = null;
@@ -94,16 +100,39 @@ namespace DamageTracker.MonoBehaviors
         private float timerNumDamage, timerNumHeal, timerNumNegHeal, timerNumMisc;
         private float timerLastDamage, timerLastHeal, timerLastNegHeal, timerLastMisc;
 
-        private float prevHealth = 0.0f, sumDamage = 0.0f, sumHeal = 0.0f, sumNegHeal = 0.0f;
-        private float timerLastDelta = 0.0f;
+        // private float prevHealth = 0.0f, sumDamage = 0.0f, sumHeal = 0.0f, sumNegHeal = 0.0f;
+        // private float timerLastDelta = 0.0f;
 
         private CharacterData playerData;
+        private Color playerColor = Color.black;
+
+        public static void UpdateConfigs()
+        {
+            formatSetting           = (NumberFormatting)DamageTracker.NumberFormattingStyle;
+            usePlayerColor          = DamageTracker.UsePlayerColor;
+
+            maxValueToShowDecimal   = DamageTracker.MaxNumberToShowDecimal;
+            scaleDecimalPart        = DamageTracker.ScaleDecimalTextSize;
+            hideDecimalOveride      = DamageTracker.HideAllDecimal;
+
+            baseFontSize            = DamageTracker.NumberFontSize;
+            logNumberScale          = DamageTracker.ScaleNumberSizeByValue;
+
+            damageNumberLifetime    = DamageTracker.NumberLifetime;
+            damageNumberFullOpaqueTime = DamageTracker.NumberOpaqueTime;
+            dpsMeasureWindow        = DamageTracker.NumberSumTimeWindow;
+            dpsMeasureIdleTime      = DamageTracker.NumberNewSumDelay;
+        }
 
         // !! // MonoBehavior
         public void Awake()
         {
             playerData = GetComponent<CharacterData>();
-            prevHealth = playerData.health;
+
+            PlayerSkinParticle skinParticle = GetComponentInChildren<PlayerSkinParticle>();
+            playerColor = Traverse.Create(skinParticle).Field("startColor2").GetValue<Color>();
+
+            // prevHealth = playerData.health;
 
             // instantiate canvas object
             if (canvasObject == null)
@@ -165,27 +194,31 @@ namespace DamageTracker.MonoBehaviors
                 }
             }
 
-            // to be implemented uniquely
-            if (focusNumMisc != null)
-            {
-                if (timerNumMisc > dpsMeasureWindow || timerLastMisc > dpsMeasureIdleTime)
-                {
-                    focusNumMisc = null;
-                    timerNumMisc = 0.0f;
-                    timerLastMisc = 0.0f;
-                }
-                else
-                {
-                    timerLastMisc += TimeHandler.deltaTime;
-                    timerNumMisc += TimeHandler.deltaTime;
-                }
-            }
+            // NYI : the change that is not by damages or heals
+            // if (focusNumMisc != null)
+            // {
+            //     if (timerNumMisc > dpsMeasureWindow || timerLastMisc > dpsMeasureIdleTime)
+            //     {
+            //         focusNumMisc = null;
+            //         timerNumMisc = 0.0f;
+            //         timerLastMisc = 0.0f;
+            //     }
+            //     else
+            //     {
+            //         timerLastMisc += TimeHandler.deltaTime;
+            //         timerNumMisc += TimeHandler.deltaTime;
+            //     }
+            // }
 
         }
 
         public void TrackDamage(float number)
         {
             if (number < 0.0f) { return; }
+            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            {
+                return;
+            }
 
             DamageNumberMono numberMono = null;
 
@@ -202,7 +235,19 @@ namespace DamageTracker.MonoBehaviors
                 focusNumDamage.transform.position = playerScreenPos + numberSpawnOffset;
 
                 numberMono = focusNumDamage.AddComponent<DamageNumberMono>();
+
                 numberMono.type = DamageNumberMono.NumberType.damage;
+                if (usePlayerColor)
+                {
+                    numberMono.textColor = playerColor + brightenPlayerColor;
+                    numberMono.outlineColor = colorDamage - darkenNumberOutline;
+                }
+                else
+                {
+                    numberMono.textColor = colorDamage;
+                    numberMono.outlineColor = Color.black;
+                }
+
                 numberMono.lifetime = damageNumberLifetime;
                 numberMono.timeFullOpaque = damageNumberFullOpaqueTime;
                 numberMono.velocity = numberObjectVelocity;
@@ -210,18 +255,28 @@ namespace DamageTracker.MonoBehaviors
                 numberMono.GetComponent<Text>().text = "";
             }
 
-            sumDamage += number;
+            // sumDamage += number;
 
             numberMono.value += number;
             numberMono.display = FormatNumber(numberMono.value, formatSetting);
 
-            numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            //numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            numberMono.fontSize = ScaleFontSizeByValue(numberMono.value);
             numberMono.display = ResizeDecimals(numberMono.display, numberMono.fontSize);
+
+            if (usePlayerColor)
+            {
+                numberMono.display = "- " + numberMono.display;
+            }
         }
 
         public void TrackHeal(float number)
         {
             if (number < 0.0f) { return; }
+            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            {
+                return;
+            }
 
             DamageNumberMono numberMono = null;
 
@@ -238,7 +293,19 @@ namespace DamageTracker.MonoBehaviors
                 focusNumHeal.transform.position = playerScreenPos + numberSpawnOffset + numberSpawnOffsetHeal;
 
                 numberMono = focusNumHeal.AddComponent<DamageNumberMono>();
+
                 numberMono.type = DamageNumberMono.NumberType.heal;
+                if (usePlayerColor)
+                {
+                    numberMono.textColor = playerColor + brightenPlayerColor;
+                    numberMono.outlineColor = colorHeal - darkenNumberOutline;
+                }
+                else
+                {
+                    numberMono.textColor = colorHeal;
+                    numberMono.outlineColor = Color.black;
+                }
+
                 numberMono.lifetime = damageNumberLifetime;
                 numberMono.timeFullOpaque = damageNumberFullOpaqueTime;
                 numberMono.velocity = numberObjectVelocity;
@@ -247,18 +314,28 @@ namespace DamageTracker.MonoBehaviors
             }
 
             // sumHeal += number;
-            sumHeal += Mathf.Min(number, playerData.maxHealth - playerData.health);
+            // sumHeal += Mathf.Min(number, playerData.maxHealth - playerData.health);
 
             numberMono.value += number;
             numberMono.display = FormatNumber(numberMono.value, formatSetting);
 
-            numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            // numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            numberMono.fontSize = ScaleFontSizeByValue(numberMono.value);
             numberMono.display = ResizeDecimals(numberMono.display, numberMono.fontSize);
+
+            if (usePlayerColor)
+            {
+                numberMono.display = "+ " + numberMono.display;
+            }
         }
 
         public void TrackNegHeal(float number)
         {
             if (number < 0.0f) { return; }
+            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            {
+                return;
+            }
 
             DamageNumberMono numberMono = null;
 
@@ -275,6 +352,19 @@ namespace DamageTracker.MonoBehaviors
                 focusNumNegHeal.transform.position = playerScreenPos + numberSpawnOffset - numberSpawnOffsetHeal;
 
                 numberMono = focusNumNegHeal.AddComponent<DamageNumberMono>();
+
+                numberMono.type = DamageNumberMono.NumberType.negHeal;
+                if (usePlayerColor)
+                {
+                    numberMono.textColor = playerColor + brightenPlayerColor;
+                    numberMono.outlineColor = colorNegHeal - darkenNumberOutline;
+                }
+                else
+                {
+                    numberMono.textColor = colorNegHeal;
+                    numberMono.outlineColor = Color.black;
+                }
+
                 numberMono.type = DamageNumberMono.NumberType.negHeal;
                 numberMono.lifetime = damageNumberLifetime;
                 numberMono.timeFullOpaque = damageNumberFullOpaqueTime;
@@ -283,14 +373,72 @@ namespace DamageTracker.MonoBehaviors
                 numberMono.GetComponent<Text>().text = "";
             }
 
-            sumNegHeal += number;
+            // sumNegHeal += number;
 
             numberMono.value += number;
             numberMono.display = FormatNumber(numberMono.value, formatSetting);
 
-            numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            // numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+            numberMono.fontSize = ScaleFontSizeByValue(numberMono.value);
             numberMono.display = ResizeDecimals(numberMono.display, numberMono.fontSize);
+
+            if (usePlayerColor)
+            {
+                numberMono.display = "- " + numberMono.display + "*";
+            }
         }
+
+        // public void ShowDemo(float number, DamageNumberMono.NumberType numberType)
+        // {
+        //     DamageNumberMono numberMono = null;
+        // 
+        //     if (focusNumNegHeal != null)
+        //     {
+        //         numberMono = focusNumNegHeal.GetComponent<DamageNumberMono>();
+        // 
+        //         timerLastNegHeal = 0.0f;
+        //     }
+        //     else
+        //     {
+        //         focusNumNegHeal = GameObject.Instantiate(prefabNumberObject, canvasObject.transform);
+        //         Vector3 playerScreenPos = MainCam.instance.cam.WorldToScreenPoint(transform.position);
+        //         focusNumNegHeal.transform.position = playerScreenPos + numberSpawnOffset - numberSpawnOffsetHeal;
+        // 
+        //         numberMono = focusNumNegHeal.AddComponent<DamageNumberMono>();
+        // 
+        //         numberMono.type = DamageNumberMono.NumberType.negHeal;
+        //         if (usePlayerColor)
+        //         {
+        //             numberMono.textColor = playerColor + brightenPlayerColor;
+        //             numberMono.outlineColor = colorNegHeal - darkenNumberOutline;
+        //         }
+        //         else
+        //         {
+        //             numberMono.textColor = colorNegHeal;
+        //             numberMono.outlineColor = Color.black;
+        //         }
+        // 
+        //         numberMono.type = DamageNumberMono.NumberType.negHeal;
+        //         numberMono.lifetime = damageNumberLifetime;
+        //         numberMono.timeFullOpaque = damageNumberFullOpaqueTime;
+        //         numberMono.velocity = numberObjectVelocity;
+        // 
+        //         numberMono.GetComponent<Text>().text = "";
+        //     }
+        // 
+        //     // sumNegHeal += number;
+        // 
+        //     numberMono.value += number;
+        //     numberMono.display = FormatNumber(numberMono.value, formatSetting);
+        // 
+        //     numberMono.fontSize = baseFontSize * (baseNumberScale + (Mathf.Log(numberMono.value, logExponent) - 1.0f) * logNumberScale);
+        //     numberMono.display = ResizeDecimals(numberMono.display, numberMono.fontSize);
+        // 
+        //     if (usePlayerColor)
+        //     {
+        //         numberMono.display = "- " + numberMono.display + "*";
+        //     }
+        // }
 
         // !! // Methods
         public static string FormatNumber(float number, NumberFormatting formatting)
@@ -356,7 +504,7 @@ namespace DamageTracker.MonoBehaviors
                     }
                     else
                     {
-                        resultStr = number.ToString("e2");
+                        resultStr = number.ToString("E2");
                     }
                     break;
             }
@@ -477,6 +625,11 @@ namespace DamageTracker.MonoBehaviors
             return resultStr;
         }
 
+        public static float ScaleFontSizeByValue(float value)
+        {
+            return baseFontSize * (baseNumberScale + (Mathf.Log(value, logExponent) - 1.0f) * logNumberScale);
+        }
+
         public static string ResizeDecimals(string input, float currentSize)
         {
             string resultStr = input;
@@ -488,7 +641,7 @@ namespace DamageTracker.MonoBehaviors
 
                 resultStr = resultStr.Insert(decimalStartI, $"<size={scaledSize}>");
 
-                int decimalEndI = resultStr.IndexOf(" ", decimalStartI);
+                int decimalEndI = Mathf.Max(resultStr.IndexOf(" ", decimalStartI), resultStr.IndexOf("E+", decimalStartI), resultStr.IndexOf("e+", decimalStartI));
 
                 if (decimalEndI >= 0)
                 {
@@ -516,7 +669,10 @@ namespace DamageTracker.MonoBehaviors
 
         // public GameObject gameObject;
         public NumberType type;
+
         public Text text;
+        public Outline textOutline;
+
         public float value;
         public string display;
         public float fontSize;
@@ -529,32 +685,22 @@ namespace DamageTracker.MonoBehaviors
         public Vector3 velocity = new Vector3(0.0f, 1.5f, 0.0f);
         public bool isUnstacking = false;
 
+        public Color textColor = Color.white;
+        public Color outlineColor = Color.black;
+
         public void Awake()
         {
             text = GetComponent<Text>();
+            textOutline = GetComponent<Outline>();
+
+            // UpdateText();
+
             PlayerDamageTracker.numberObjects.Add(gameObject);
         }
 
         public void Update()
         {
-            switch (type)
-            {
-                case NumberType.unclassified:
-                    text.color = PlayerDamageTracker.colorUnclassified;
-                    break;
-                case NumberType.damage:
-                    text.color = PlayerDamageTracker.colorDamage;
-                    break;
-                case NumberType.heal:
-                    text.color = PlayerDamageTracker.colorHeal;
-                    break;
-                case NumberType.negHeal:
-                    text.color = PlayerDamageTracker.colorNegHeal;
-                    break;
-                default:
-                    text.color = PlayerDamageTracker.colorUnclassified;
-                    break;
-            }
+            UpdateText();
 
             if (timer > lifetime)
             {
@@ -565,14 +711,8 @@ namespace DamageTracker.MonoBehaviors
             {
                 float alpha = 1.0f - ((timer - timeFullOpaque) / (lifetime - timeFullOpaque));
                 text.color = new Color(text.color.r, text.color.g, text.color.b, alpha);
+                textOutline.effectColor = new Color(textOutline.effectColor.r, textOutline.effectColor.g, textOutline.effectColor.b, alpha);
             }
-
-            text.text = display;
-            text.fontSize = Mathf.CeilToInt(fontSize);
-
-            // size is the box covering entire text + paddings
-            textSize.y = fontSize + (PlayerDamageTracker.textPadding * 2.0f);
-            textSize.x = (fontSize * PlayerDamageTracker.fontWidthToHeightRatio * display.Length) + (PlayerDamageTracker.textPadding * 2.0f);
 
             transform.localPosition += velocity * TimeHandler.deltaTime;
 
@@ -602,6 +742,19 @@ namespace DamageTracker.MonoBehaviors
             }
 
             timer += TimeHandler.deltaTime;
+        }
+
+        private void UpdateText()
+        {
+            text.color = textColor;
+            textOutline.effectColor = outlineColor;
+
+            text.text = display;
+            text.fontSize = Mathf.CeilToInt(fontSize);
+
+            // size is the box covering entire text + paddings
+            textSize.y = fontSize + (PlayerDamageTracker.textPadding * 2.0f);
+            textSize.x = (fontSize * PlayerDamageTracker.fontWidthToHeightRatio * display.Length) + (PlayerDamageTracker.textPadding * 2.0f);
         }
     }
 }
