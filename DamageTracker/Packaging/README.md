@@ -72,7 +72,7 @@ Keep better tracks on all the damage everyone dealt, taken and healed! A "DPS Me
 Hopefully this mod will help clarifying all the damages being taken, given and healed away. All numbers are rendered on screen-space.
 
 ## Patch Notes
-#### Public Release 1-1 \[v1.2.0]
+#### Public Release 1-2 \[v1.2.0]
 - Fixed major issue with damage number not disappearing after a set duration and **eventually slow the game down or worse**.
 
 #### Public Release 1-1 \[v1.1.0]

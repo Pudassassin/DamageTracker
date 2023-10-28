@@ -783,7 +783,7 @@ namespace DamageTracker.MonoBehaviors
 
         private void OnDestroy()
         {
-            UnityEngine.Debug.Log($"[DamageTracker] Destroyed and removing from list");
+            // UnityEngine.Debug.Log($"[DamageTracker] Destroyed and removing from list");
             PlayerDamageTracker.numberObjects.Remove(gameObject);
         }
 
