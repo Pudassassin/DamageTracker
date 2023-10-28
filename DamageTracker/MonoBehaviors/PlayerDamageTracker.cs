@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Collections;
+using System.Globalization;
 
 using UnityEngine;
 
 using UnboundLib;
-using System.Globalization;
+using UnboundLib.GameModes;
 using UnityEngine.UI;
-using static UnityEngine.EventSystems.EventTrigger;
+
 using HarmonyLib;
 
 namespace DamageTracker.MonoBehaviors
@@ -105,6 +105,7 @@ namespace DamageTracker.MonoBehaviors
 
         private CharacterData playerData;
         private Color playerColor = Color.black;
+        public static bool stopTracking = false;
 
         public static void UpdateConfigs()
         {
@@ -212,9 +213,10 @@ namespace DamageTracker.MonoBehaviors
 
         }
 
+        // !! // Utils and Methods
         public void TrackDamage(float number)
         {
-            if (number < 0.0f) { return; }
+            if (number < 0.0f || stopTracking) { return; }
             if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
@@ -233,6 +235,13 @@ namespace DamageTracker.MonoBehaviors
                 focusNumDamage = GameObject.Instantiate(prefabNumberObject, canvasObject.transform);
                 Vector3 playerScreenPos = MainCam.instance.cam.WorldToScreenPoint(transform.position);
                 focusNumDamage.transform.position = playerScreenPos + numberSpawnOffset;
+
+                // !! // hot fix patch + potential new effect
+                RemoveAfterSeconds remover = focusNumDamage.AddComponent<RemoveAfterSeconds>();
+                remover.seconds = damageNumberLifetime;
+                remover.scaleWithScale = false;
+                remover.shrink = false;
+                // !! //
 
                 numberMono = focusNumDamage.AddComponent<DamageNumberMono>();
 
@@ -272,7 +281,7 @@ namespace DamageTracker.MonoBehaviors
 
         public void TrackHeal(float number)
         {
-            if (number < 0.0f) { return; }
+            if (number < 0.0f || stopTracking) { return; }
             if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
@@ -291,6 +300,13 @@ namespace DamageTracker.MonoBehaviors
                 focusNumHeal = GameObject.Instantiate(prefabNumberObject, canvasObject.transform);
                 Vector3 playerScreenPos = MainCam.instance.cam.WorldToScreenPoint(transform.position);
                 focusNumHeal.transform.position = playerScreenPos + numberSpawnOffset + numberSpawnOffsetHeal;
+
+                // !! // hot fix patch + potential new effect
+                RemoveAfterSeconds remover = focusNumHeal.AddComponent<RemoveAfterSeconds>();
+                remover.seconds = damageNumberLifetime;
+                remover.scaleWithScale = false;
+                remover.shrink = false;
+                // !! //
 
                 numberMono = focusNumHeal.AddComponent<DamageNumberMono>();
 
@@ -331,7 +347,7 @@ namespace DamageTracker.MonoBehaviors
 
         public void TrackNegHeal(float number)
         {
-            if (number < 0.0f) { return; }
+            if (number < 0.0f || stopTracking) { return; }
             if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
@@ -350,6 +366,13 @@ namespace DamageTracker.MonoBehaviors
                 focusNumNegHeal = GameObject.Instantiate(prefabNumberObject, canvasObject.transform);
                 Vector3 playerScreenPos = MainCam.instance.cam.WorldToScreenPoint(transform.position);
                 focusNumNegHeal.transform.position = playerScreenPos + numberSpawnOffset - numberSpawnOffsetHeal;
+
+                // !! // hot fix patch + potential new effect
+                RemoveAfterSeconds remover = focusNumNegHeal.AddComponent<RemoveAfterSeconds>();
+                remover.seconds = damageNumberLifetime;
+                remover.scaleWithScale = false;
+                remover.shrink = false;
+                // !! //
 
                 numberMono = focusNumNegHeal.AddComponent<DamageNumberMono>();
 
@@ -667,6 +690,8 @@ namespace DamageTracker.MonoBehaviors
             negHeal
         }
 
+        public static float realtimeToDestroyScale = 3.5f;
+
         // public GameObject gameObject;
         public NumberType type;
 
@@ -679,6 +704,7 @@ namespace DamageTracker.MonoBehaviors
 
         public float lifetime = 3.0f, timeFullOpaque = 1.5f;
         public float timer = 0.0f;
+        public float realTImer = 0.0f;
 
         public Vector2 textSize = Vector2.zero;
 
@@ -702,9 +728,15 @@ namespace DamageTracker.MonoBehaviors
         {
             UpdateText();
 
+            // UnityEngine.Debug.Log($"[DamageTracker] Check Lifetime");
             if (timer > lifetime)
             {
-                PlayerDamageTracker.numberObjects.Remove(gameObject);
+                // PlayerDamageTracker.numberObjects.Remove(gameObject);
+                Destroy(gameObject);
+            }
+            else if (realTImer > lifetime * realtimeToDestroyScale)
+            {
+                // PlayerDamageTracker.numberObjects.Remove(gameObject);
                 Destroy(gameObject);
             }
             else if (timer > timeFullOpaque)
@@ -714,11 +746,14 @@ namespace DamageTracker.MonoBehaviors
                 textOutline.effectColor = new Color(textOutline.effectColor.r, textOutline.effectColor.g, textOutline.effectColor.b, alpha);
             }
 
+            // UnityEngine.Debug.Log($"[DamageTracker] Floating and unstacking");
             transform.localPosition += velocity * TimeHandler.deltaTime;
 
             isUnstacking = false;
             foreach (GameObject numberObj in PlayerDamageTracker.numberObjects)
-            { 
+            {
+                if (numberObj == null) { continue; }
+
                 DamageNumberMono numberMono = numberObj.GetComponent<DamageNumberMono>();
                 if (numberMono == null) { continue; }
                 else if (numberObj == gameObject) { continue; }
@@ -741,11 +776,20 @@ namespace DamageTracker.MonoBehaviors
                 transform.localPosition += velocity * TimeHandler.deltaTime * PlayerDamageTracker.textUnstackingSpeedMul;
             }
 
+            // UnityEngine.Debug.Log($"[DamageTracker] Time increment");
             timer += TimeHandler.deltaTime;
+            realTImer += Time.deltaTime;
+        }
+
+        private void OnDestroy()
+        {
+            UnityEngine.Debug.Log($"[DamageTracker] Destroyed and removing from list");
+            PlayerDamageTracker.numberObjects.Remove(gameObject);
         }
 
         private void UpdateText()
         {
+            // UnityEngine.Debug.Log($"[DamageTracker] UpdateText()");
             text.color = textColor;
             textOutline.effectColor = outlineColor;
 

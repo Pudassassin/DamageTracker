@@ -31,7 +31,7 @@ namespace DamageTracker
     {
         private const string ModId = "com.pudassassin.rounds.DamageTracker";
         private const string ModName = "Damage Tracker";
-        private const string Version = "1.0.0"; //build #20 / Release 1-0-0
+        private const string Version = "1.2.0"; //build #26 / Release 1-2-0
 
         private const string CompatibilityModName = "DamageTracker";
 
@@ -722,6 +722,7 @@ namespace DamageTracker
             // Use this to call any harmony patch files your mod may have
             var harmony = new Harmony(ModId);
             harmony.PatchAll();
+
         }
         void Start()
         {
@@ -748,7 +749,16 @@ namespace DamageTracker
             );
 
             GameModeManager.AddHook(GameModeHooks.HookGameStart, OnGameStart);
+            GameModeManager.AddHook(GameModeHooks.HookPointStart, OnPointStart);
+            GameModeManager.AddHook(GameModeHooks.HookPointEnd, OnPointEnd);
 
+            // Action<Player> oldJoinAction = PlayerManager.instance.PlayerJoinedAction;
+            // Action<Player> trackNewPlayer = (Player player) =>
+            // {
+            //     player.gameObject.GetOrAddComponent<PlayerDamageTracker>();
+            // };
+            // Delegate.Combine(oldJoinAction, trackNewPlayer);
+            // Traverse.Create(PlayerManager.instance.PlayerJoinedAction).SetValue(oldJoinAction);
         }
 
         public void Update()
@@ -756,6 +766,8 @@ namespace DamageTracker
 
         }
 
+
+        // !! // Gamehook Methods
         IEnumerator OnGameStart(IGameModeHandler gm)
         {
             PlayerDamageTracker.UpdateConfigs();
@@ -770,6 +782,19 @@ namespace DamageTracker
 
                 player.gameObject.AddComponent<PlayerDamageTracker>();
             }
+
+            yield break;
+        }
+
+        IEnumerator OnPointStart(IGameModeHandler gm)
+        {
+            PlayerDamageTracker.stopTracking = false;
+
+            yield break;
+        }
+        IEnumerator OnPointEnd(IGameModeHandler gm)
+        {
+            PlayerDamageTracker.stopTracking = true;
 
             yield break;
         }

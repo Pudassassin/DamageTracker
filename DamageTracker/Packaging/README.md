@@ -1,5 +1,5 @@
-# Damage Tracker [1.0.0] 
-Public Release 1-0-0, build #20
+# Damage Tracker [1.1.0] 
+Public Release 1-1-0, build #23
 
 Keep better tracks on all the damage everyone dealt, taken and healed! A "DPS Meter" made by Pudassassin.
 
@@ -72,5 +72,13 @@ Keep better tracks on all the damage everyone dealt, taken and healed! A "DPS Me
 Hopefully this mod will help clarifying all the damages being taken, given and healed away. All numbers are rendered on screen-space.
 
 ## Patch Notes
-#### Public Beta 1-0 \[v1.0.0]
+#### Public Release 1-1 \[v1.2.0]
+- Fixed major issue with damage number not disappearing after a set duration and **eventually slow the game down or worse**.
+
+#### Public Release 1-1 \[v1.1.0]
+- Damage numbers now guaranteed to disappear based on real-time duration if the game's slow-mo effect lasts too long for some reason.
+- Damage numbers will stop tracking when the battle ends and resume at battle starts.
+- Fixed the bug preventing anything players from taking / resolving damage in Sandbox Mode.
+
+#### Public Release 1-0 \[v1.0.0]
 - It all begins. Core functionality with in-game options and approximate preview.

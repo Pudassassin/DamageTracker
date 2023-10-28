@@ -20,6 +20,12 @@ namespace DamageTracker.Patches
             }
 
             PlayerDamageTracker tracker = ___player.gameObject.GetComponent<PlayerDamageTracker>();
+            if (tracker == null)
+            {
+                ___player.gameObject.AddComponent<PlayerDamageTracker>();
+                return;
+            }
+
             // positive healing
             if (healAmount > 0.0f)
             {
@@ -40,6 +46,12 @@ namespace DamageTracker.Patches
         {
             // bullets, and all other sort of damaging capabilities
             PlayerDamageTracker tracker = ___player.gameObject.GetComponent<PlayerDamageTracker>();
+            if (tracker == null)
+            {
+                ___player.gameObject.AddComponent<PlayerDamageTracker>();
+                return;
+            }
+
             tracker.TrackDamage(damage.magnitude);
         }
 
