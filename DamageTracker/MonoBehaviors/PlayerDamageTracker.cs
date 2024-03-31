@@ -213,14 +213,39 @@ namespace DamageTracker.MonoBehaviors
 
         }
 
+        // !! // Rips from ModdingUtils
+        public static bool PlayerAlive(Player player)
+        {
+            return !player.data.dead;
+        }
+
+        public static bool PlayerSimulated(Player player)
+        {
+            return (bool)Traverse.Create(player.data.playerVel).Field("simulated").GetValue();
+        }
+
+        public static bool PlayerAliveAndSimulated(Player player)
+        {
+            if (PlayerAlive(player))
+            {
+                return PlayerSimulated(player);
+            }
+
+            return false;
+        }
+
         // !! // Utils and Methods
         public void TrackDamage(float number)
         {
             if (number < 0.0f || stopTracking) { return; }
-            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            if (!PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
             }
+            // if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            // {
+            //     return;
+            // }
 
             DamageNumberMono numberMono = null;
 
@@ -282,7 +307,7 @@ namespace DamageTracker.MonoBehaviors
         public void TrackHeal(float number)
         {
             if (number < 0.0f || stopTracking) { return; }
-            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            if (!PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
             }
@@ -348,7 +373,7 @@ namespace DamageTracker.MonoBehaviors
         public void TrackNegHeal(float number)
         {
             if (number < 0.0f || stopTracking) { return; }
-            if (!ModdingUtils.Utils.PlayerStatus.PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
+            if (!PlayerAliveAndSimulated(playerData.player) || playerData.healthHandler.isRespawning)
             {
                 return;
             }

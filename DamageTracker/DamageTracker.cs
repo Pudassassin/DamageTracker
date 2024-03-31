@@ -19,8 +19,6 @@ namespace DamageTracker
 {
     // These are the mods required for our mod to work
     [BepInDependency("com.willis.rounds.unbound", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("pykess.rounds.plugins.moddingutils", BepInDependency.DependencyFlags.HardDependency)]
-    // [BepInDependency("pykess.rounds.plugins.pickncards", BepInDependency.DependencyFlags.HardDependency)]
 
     // Declares our mod to Bepin
     [BepInPlugin(ModId, ModName, Version)]
@@ -31,7 +29,7 @@ namespace DamageTracker
     {
         private const string ModId = "com.pudassassin.rounds.DamageTracker";
         private const string ModName = "Damage Tracker";
-        private const string Version = "1.2.0"; //build #26 / Release 1-2-0
+        private const string Version = "1.2.1"; //build #27 / Release 1-2-0
 
         private const string CompatibilityModName = "DamageTracker";
 
